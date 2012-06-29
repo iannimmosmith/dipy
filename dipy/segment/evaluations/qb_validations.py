@@ -1,0 +1,86 @@
+import numpy as np
+import dipy as dp
+# track reading
+from dipy.io.dpy import Dpy
+# segmenation
+from dipy.segment.quickbundles import QuickBundles
+# visualization
+from fos import Window, Region
+from fos.actor import Axes, Text3D
+from bundle_picker import TrackLabeler
+# metrics 
+from dipy.tracking.metrics import downsample
+from dipy.tracking.distances import (bundles_distances_mam,
+					bundles_distances_mdf,
+					most_similar_track_mam)
+
+def load_data(id):
+	ids=['02','03','04','05','06','08','09','10','11','12']
+	filename =  'data/subj_'+ids[id]+'_lsc_QA_ref.dpy'
+	dp=Dpy(filename,'r')
+	tracks=dp.read_tracks()
+	dp.close()
+	return tracks
+
+def show_qb_streamlines(tracks,qb):
+	# Create gui and message passing (events)
+	w = Window(caption = 'QB validation', 
+		width = 1200, 
+		height = 800, 
+		bgcolor = (0.,0.,0.2) )
+	# Create a region of the world of actors
+	region = Region( regionname = 'Main',
+			extent_min = np.array([-5.0, -5, -5]),
+			extent_max = np.array([5, 5 ,5]))
+	# Create actors
+	tl = TrackLabeler('Bundle Picker',
+			qb,qb.downsampled_tracks(),
+			vol_shape=(182,218,182),tracks_alpha=1)   
+	ax = Axes(name = "3 axes", scale= 10, linewidth=2.0)
+	vert = np.array( [[2.0,3.0,0.0]], dtype = np.float32 )
+	ptr = np.array( [[.2,.2,.2]], dtype = np.float32 )
+	tex = Text3D( "Text3D", vert, "(0,0,0)", 10*2.5, 10*.5, ptr)
+	#Add actor to their region
+	region.add_actor(ax)
+	#region.add_actor(tex)
+	region.add_actor(tl)
+	#Add the region to the window
+	w.add_region(region)
+	w.refocus_camera()
+
+	print 'Actors loaded'
+
+	return w,region,ax,tex
+
+def get_random_streamlines(tracks,N):	
+	#qb = QuickBundles(tracks,dist,18)
+	#N=qb.total_clusters()
+	random_labels = np.random.permutation(np.arange(len(tracks)))[:N]
+	random_streamlines = [tracks[i] for i in random_labels]
+	return random_streamlines
+		
+def compare_streamline_sets(sla,slb,dist=20):
+	d = bundles_distances_mdf(sla,slb)
+	d[d<dist]=1
+	d[d>=dist]=0
+	return d 
+id=0
+
+tracks=load_data(id)
+tracks=tracks[:1000]
+print 'Streamlines loaded'
+#qb=QuickBundles(tracks,20,18)
+#print 'QuickBundles finished'
+#print 'visualize/interact with streamlines'
+#window,region,axes,labeler = show_qb_streamlines(tracks,qb)
+
+qb = QuickBundles(tracks,20,18)
+N=qb.total_clusters()
+random_streamlines={}
+for rep in [0,1]:
+	random_streamlines[rep] = get_random_streamlines(qb.downsampled_tracks(), N)
+	
+DQ=compare_streamline_sets(qb.virtuals(),qb.downsampled_tracks())
+DR=compare_streamline_sets(random_streamlines[0],qb.downsampled_tracks())
+
+	
