@@ -1,3 +1,6 @@
+""" Validating QuickBundles
+"""
+
 import numpy as np
 import dipy as dp
 # track reading
