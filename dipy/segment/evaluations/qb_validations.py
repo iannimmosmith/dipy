@@ -14,6 +14,8 @@ from dipy.tracking.distances import (bundles_distances_mam,
 					bundles_distances_mdf,
 					most_similar_track_mam)
 
+from matplotlib.mlab import find
+
 def load_data(id):
 	ids=['02','03','04','05','06','08','09','10','11','12']
 	filename =  'data/subj_'+ids[id]+'_lsc_QA_ref.dpy'
@@ -64,10 +66,15 @@ def compare_streamline_sets(sla,slb,dist=20):
 	d[d<dist]=1
 	d[d>=dist]=0
 	return d 
+
+def binarise(D, thr):
+#Replaces elements of D which are <thr with 1 and the rest with 0
+        return 1*(np.array(D)<thr)
+
 id=0
 
 tracks=load_data(id)
-tracks=tracks[:1000]
+tracks=tracks[:5000]
 print 'Streamlines loaded'
 #qb=QuickBundles(tracks,20,18)
 #print 'QuickBundles finished'
@@ -80,7 +87,32 @@ random_streamlines={}
 for rep in [0,1]:
 	random_streamlines[rep] = get_random_streamlines(qb.downsampled_tracks(), N)
 	
-DQ=compare_streamline_sets(qb.virtuals(),qb.downsampled_tracks())
-DR=compare_streamline_sets(random_streamlines[0],qb.downsampled_tracks())
+# Thresholded distance matrices (subset x tracks) where subset Q = QB centroids
+# and subset R = matched random subset. Matrices have 1 if the compared
+# tracks have MDF distance < threshold a,d 0 otherwise.
+DQ=compare_streamline_sets(qb.virtuals(),qb.downsampled_tracks(), 20)
+DR=compare_streamline_sets(random_streamlines[0],qb.downsampled_tracks(), 20)
 
-	
+# The number of subset tracks 'close' to each track
+neighbours_Q = np.sum(DQ, axis=0)
+neighbours_R = np.sum(DR, axis=0)
+
+maxclose = np.int(np.max(np.hstack((neighbours_Q,neighbours_R))))
+
+# The numbers of tracks 0, 1, 2, ... 'close' subset tracks
+counts = [(np.int(n), len(find(neighbours_Q==n)), len(find(neighbours_R==n)))
+          for n in range(maxclose+1)]
+
+print np.array(counts)
+
+# Typically counts_Q shows (a) very few tracks with 0 close QB
+# controids, (b) many tracks with a small number (between 1 and 3?) close QB
+# tracks, and (c) few tracks with many (>3?) close QB tracks
+
+# By contrast counts_R shows (a) a large number of tracks with 0 close
+# R (random) neighbours, (b) fewer tracks with a small number of close R
+# tracks, and (c) a long tail showing how the R sample has over-sampled
+# in dense parts of the tractography, coming up with several rather
+# similar tracks. By contast the QB tracks are dissimilar by design - or
+# can be thought of as more evenly distributed in track space.
+
