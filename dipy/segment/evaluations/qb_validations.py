@@ -74,7 +74,10 @@ def binarise(D, thr):
 id=0
 
 tracks=load_data(id)
-tracks=tracks[:5000]
+
+track_subset_size = 50000
+
+tracks=tracks[:track_subset_size]
 print 'Streamlines loaded'
 #qb=QuickBundles(tracks,20,18)
 #print 'QuickBundles finished'
@@ -116,3 +119,66 @@ print np.array(counts)
 # similar tracks. By contast the QB tracks are dissimilar by design - or
 # can be thought of as more evenly distributed in track space.
 
+# The output below was generated with subject 02, 5k tracks, and threshold 20.
+# Column 0 is the neighbour count, and Columns 1 and 2 are the
+# number of tracks with that neighbour count.
+
+# I suppose you could say this revealed some kind of sparseness for the
+# QB subset by comparison with the Random one
+
+#[[   0    2  668]
+# [   1 1174  828]
+# [   2 1905  720]
+# [   3 1279  703]
+# [   4  491  572]
+# [   5  117  505]
+# [   6   28  393]
+# [   7    2  249]
+# [   8    2  144]
+# [   9    0  104]
+# [  10    0   40]
+# [  11    0   23]
+# [  12    0   15]
+# [  13    0   16]
+# [  14    0    7]
+# [  15    0    8]
+# [  16    0    5]]
+
+#The next table is for 10k tracks
+#[[   0    3  750]
+# [   1 1777 1361]
+# [   2 3674 1567]
+# [   3 2928 1554]
+# [   4 1195 1472]
+# [   5  320 1130]
+# [   6   80  800]
+# [   7   19  643]
+# [   8    3  375]
+# [   9    1  192]
+# [  10    0  112]
+# [  11    0   35]
+# [  12    0    7]
+# [  13    0    2]]
+
+#Here is a table for 50k tracks (took a long time!)
+#[[    0     7  2656]
+# [    1  4726  4071]
+# [    2 13934  4958]
+# [    3 15927  5968]
+# [    4  9912  6379]
+# [    5  3901  5526]
+# [    6  1204  4709]
+# [    7   296  3798]
+# [    8    55  3147]
+# [    9    16  2815]
+# [   10    21  2159]
+# [   11     1  1479]
+# [   12     0   966]
+# [   13     0   621]
+# [   14     0   337]
+# [   15     0   208]
+# [   16     0   121]
+# [   17     0    61]
+# [   18     0    16]
+# [   19     0     3]
+# [   20     0     2]]
