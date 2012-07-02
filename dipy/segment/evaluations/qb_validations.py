@@ -78,7 +78,7 @@ id=0
 
 tracks=load_data(id)
 
-track_subset_size = 50000
+track_subset_size = 1000
 
 tracks=tracks[:track_subset_size]
 print 'Streamlines loaded'
@@ -112,7 +112,7 @@ counts = [(np.int(n), len(find(neighbours_Q==n)), len(find(neighbours_R==n)))
 print np.array(counts)
 
 # Typically counts_Q shows (a) very few tracks with 0 close QB
-# controids, (b) many tracks with a small number (between 1 and 3?) close QB
+# centroids, (b) many tracks with a small number (between 1 and 3?) close QB
 # tracks, and (c) few tracks with many (>3?) close QB tracks
 
 # By contrast counts_R shows (a) a large number of tracks with 0 close
@@ -129,6 +129,7 @@ print np.array(counts)
 # I suppose you could say this revealed some kind of sparseness for the
 # QB subset by comparison with the Random one
 
+counts, Qfreq, Rfreq 
 #[[   0    2  668]
 # [   1 1174  828]
 # [   2 1905  720]
@@ -164,6 +165,8 @@ print np.array(counts)
 # [  13    0    2]]
 
 #Here is a table for 50k tracks (took a long time!)
+
+#count 
 #[[    0     7  2656]
 # [    1  4726  4071]
 # [    2 13934  4958]
@@ -185,3 +188,19 @@ print np.array(counts)
 # [   18     0    16]
 # [   19     0     3]
 # [   20     0     2]]
+
+
+cntT = zeros(len(T))
+for (i,t) in enumerate(T):
+    for v in V:
+        if MDF(v,t) < dist_thr:
+            cntT[i]+=1
+
+coverage = # neighb tracks / #tracks 
+         = cntT.sum()/len(T)
+
+overlap = (cntT>1).sum()/len(T)
+
+missed == (cntT==0).sum()/len(T)
+
+#virtuals/#tracks
