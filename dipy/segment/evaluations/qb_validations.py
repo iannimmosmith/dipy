@@ -98,7 +98,7 @@ id=0
 
 tracks=load_data(id)
 
-track_subset_size = 100000
+track_subset_size = 50000
 
 tracks=tracks[:track_subset_size]
 print 'Streamlines loaded'
@@ -107,7 +107,7 @@ print 'Streamlines loaded'
 #print 'visualize/interact with streamlines'
 #window,region,axes,labeler = show_qb_streamlines(tracks,qb)
 
-qb = QuickBundles(tracks,10,18)
+qb = QuickBundles(tracks,20,18)
 N=qb.total_clusters()
 print 'QB finished with', N, 'clusters'
 
@@ -124,8 +124,8 @@ for rep in [0]:
 # The number of subset tracks 'close' to each track
 #neighbours_Q = np.sum(DQ, axis=0)
 #neighbours_R = np.sum(DR, axis=0)
-neighbours_Q = count_close_tracks(qb.virtuals(), qb.downsampled_tracks(), 10)
-neighbours_R = count_close_tracks(random_streamlines[0], qb.downsampled_tracks(), 10)
+neighbours_Q = count_close_tracks(qb.virtuals(), qb.downsampled_tracks(), 20)
+neighbours_R = count_close_tracks(random_streamlines[0], qb.downsampled_tracks(), 20)
 
 maxclose = np.int(np.max(np.hstack((neighbours_Q,neighbours_R))))
 
@@ -191,8 +191,7 @@ print np.array(counts)
 # [  13    0    2]]
 
 #Here is a table for 50k tracks (took a long time!)
-#(didn't catch how many clusters)
-#count 
+#QB finished with 480 clusters
 #[[    0     7  2656]
 # [    1  4726  4071]
 # [    2 13934  4958]
