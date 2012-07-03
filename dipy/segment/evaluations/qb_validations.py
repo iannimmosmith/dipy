@@ -64,11 +64,31 @@ def get_random_streamlines(tracks,N):
 	random_streamlines = [tracks[i] for i in random_labels]
 	return random_streamlines
 		
-def compare_streamline_sets(sla,slb,dist=20):
+def count_close_tracks(sla, slb, dist_thr=20):
+        cnt_a_close = zeros(len(slb))
+        for ta in sla:
+            dta = bundles_distances_mdf([ta],slb)[0]
+            cnt_a_close += binarise(dta, dist_thr)
+        return cnt_a_close
+
+'''
+coverage = # neighb tracks / #tracks 
+         = cntT.sum()/len(T)
+
+overlap = (cntT>1).sum()/len(T)
+
+missed == (cntT==0).sum()/len(T)
+'''
+
+#virtuals/#tracks
+        
+'''
+compare_streamline_sets(sla,slb,dist=20):
 	d = bundles_distances_mdf(sla,slb)
 	d[d<dist]=1
 	d[d>=dist]=0
 	return d 
+'''
 
 def binarise(D, thr):
 #Replaces elements of D which are <thr with 1 and the rest with 0
@@ -78,7 +98,7 @@ id=0
 
 tracks=load_data(id)
 
-track_subset_size = 1000
+track_subset_size = 100000
 
 tracks=tracks[:track_subset_size]
 print 'Streamlines loaded'
@@ -87,21 +107,25 @@ print 'Streamlines loaded'
 #print 'visualize/interact with streamlines'
 #window,region,axes,labeler = show_qb_streamlines(tracks,qb)
 
-qb = QuickBundles(tracks,20,18)
+qb = QuickBundles(tracks,10,18)
 N=qb.total_clusters()
+print 'QB finished with', N, 'clusters'
+
 random_streamlines={}
-for rep in [0,1]:
+for rep in [0]:
 	random_streamlines[rep] = get_random_streamlines(qb.downsampled_tracks(), N)
 	
 # Thresholded distance matrices (subset x tracks) where subset Q = QB centroids
 # and subset R = matched random subset. Matrices have 1 if the compared
 # tracks have MDF distance < threshold a,d 0 otherwise.
-DQ=compare_streamline_sets(qb.virtuals(),qb.downsampled_tracks(), 20)
-DR=compare_streamline_sets(random_streamlines[0],qb.downsampled_tracks(), 20)
+#DQ=compare_streamline_sets(qb.virtuals(),qb.downsampled_tracks(), 20)
+#DR=compare_streamline_sets(random_streamlines[0],qb.downsampled_tracks(), 20)
 
 # The number of subset tracks 'close' to each track
-neighbours_Q = np.sum(DQ, axis=0)
-neighbours_R = np.sum(DR, axis=0)
+#neighbours_Q = np.sum(DQ, axis=0)
+#neighbours_R = np.sum(DR, axis=0)
+neighbours_Q = count_close_tracks(qb.virtuals(), qb.downsampled_tracks(), 10)
+neighbours_R = count_close_tracks(random_streamlines[0], qb.downsampled_tracks(), 10)
 
 maxclose = np.int(np.max(np.hstack((neighbours_Q,neighbours_R))))
 
@@ -129,7 +153,8 @@ print np.array(counts)
 # I suppose you could say this revealed some kind of sparseness for the
 # QB subset by comparison with the Random one
 
-counts, Qfreq, Rfreq 
+#counts, Qfreq, Rfreq 
+#191 clusters
 #[[   0    2  668]
 # [   1 1174  828]
 # [   2 1905  720]
@@ -149,6 +174,7 @@ counts, Qfreq, Rfreq
 # [  16    0    5]]
 
 #The next table is for 10k tracks
+#QB finished with 349 clusters
 #[[   0    3  750]
 # [   1 1777 1361]
 # [   2 3674 1567]
@@ -165,7 +191,7 @@ counts, Qfreq, Rfreq
 # [  13    0    2]]
 
 #Here is a table for 50k tracks (took a long time!)
-
+#(didn't catch how many clusters)
 #count 
 #[[    0     7  2656]
 # [    1  4726  4071]
@@ -189,18 +215,111 @@ counts, Qfreq, Rfreq
 # [   19     0     3]
 # [   20     0     2]]
 
+# With 100k
+#QB finished with 554 clusters
+#[[    0    13  4260]
+# [    1  7934  6270]
+# [    2 23695  8319]
+# [    3 31300 11154]
+# [    4 22775 11716]
+# [    5  9732 11578]
+# [    6  3141  9930]
+# [    7  1053  8880]
+# [    8   262  7568]
+# [    9    68  5511]
+# [   10    26  3639]
+# [   11     1  2838]
+# [   12     0  2051]
+# [   13     0  1936]
+# [   14     0  1615]
+# [   15     0  1102]
+# [   16     0   713]
+# [   17     0   461]
+# [   18     0   242]
+# [   19     0   119]
+# [   20     0    60]
+# [   21     0    32]
+# [   22     0     6]]
 
-cntT = zeros(len(T))
-for (i,t) in enumerate(T):
-    for v in V:
-        if MDF(v,t) < dist_thr:
-            cntT[i]+=1
+'''
+Now with thresholds (10,10) and 1k clusters
+QB finished with 560 clusters
+[[  0   0 197]
+ [  1 874 388]
+ [  2 112 229]
+ [  3  13  94]
+ [  4   1  55]
+ [  5   0  15]
+ [  6   0   8]
+ [  7   0  14]]
+'''
 
-coverage = # neighb tracks / #tracks 
-         = cntT.sum()/len(T)
+'''
+Now with thresholds (10,10) and 10k tracks
+QB finished with 1830 clusters
+[[   0    6 1696]
+ [   1 4879 1957]
+ [   2 3454 1694]
+ [   3 1315 1448]
+ [   4  292 1060]
+ [   5   52  687]
+ [   6    2  401]
+ [   7    0  285]
+ [   8    0  200]
+ [   9    0  164]
+ [  10    0  114]
+ [  11    0   80]
+ [  12    0   43]
+ [  13    0   39]
+ [  14    0   27]
+ [  15    0   21]
+ [  16    0   20]
+ [  17    0   19]
+ [  18    0   21]
+ [  19    0   12]
+ [  20    0    8]
+ [  21    0    3]
+ [  22    0    1]]
+'''
 
-overlap = (cntT>1).sum()/len(T)
-
-missed == (cntT==0).sum()/len(T)
-
-#virtuals/#tracks
+'''
+and thresholds (10,10) and 100k tracks
+QB finished with 3790 clusters
+[[    0    39  8528]
+ [    1 19543 10003]
+ [    2 33795 10830]
+ [    3 28215 10861]
+ [    4 13257 10523]
+ [    5  4121  9341]
+ [    6   847  7964]
+ [    7   156  6448]
+ [    8    26  4819]
+ [    9     1  3637]
+ [   10     0  2997]
+ [   11     0  2186]
+ [   12     0  1891]
+ [   13     0  1424]
+ [   14     0  1291]
+ [   15     0  1033]
+ [   16     0   996]
+ [   17     0   881]
+ [   18     0   881]
+ [   19     0   701]
+ [   20     0   631]
+ [   21     0   600]
+ [   22     0   478]
+ [   23     0   376]
+ [   24     0   310]
+ [   25     0   143]
+ [   26     0   107]
+ [   27     0    49]
+ [   28     0    27]
+ [   29     0    13]
+ [   30     0     9]
+ [   31     0     2]
+ [   32     0     7]
+ [   33     0     6]
+ [   34     0     3]
+ [   35     0     3]
+ [   36     0     1]]
+'''
