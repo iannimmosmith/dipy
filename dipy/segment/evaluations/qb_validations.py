@@ -68,6 +68,7 @@ def count_close_tracks(sla, slb, dist_thr=20):
         cnt_a_close = zeros(len(slb))
         for ta in sla:
             dta = bundles_distances_mdf([ta],slb)[0]
+#            dta = bundles_distances_mam([ta],slb)[0]
             cnt_a_close += binarise(dta, dist_thr)
         return cnt_a_close
 
