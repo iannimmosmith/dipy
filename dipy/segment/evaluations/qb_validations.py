@@ -16,16 +16,23 @@ from dipy.tracking.metrics import downsample
 from dipy.tracking.distances import (bundles_distances_mam,
 					bundles_distances_mdf,
 					most_similar_track_mam)
-
+from dipy.tracking.metrics import downsample
 from matplotlib.mlab import find
 
 def load_data(id):
 	ids=['02','03','04','05','06','08','09','10','11','12']
 	filename =  'data/subj_'+ids[id]+'_lsc_QA_ref.dpy'
 	dp=Dpy(filename,'r')
+        print 'Loading', filename
 	tracks=dp.read_tracks()
 	dp.close()
 	return tracks
+
+def get_tractography_sizes():
+        sizes = []
+        for d in range(10):
+                sizes.append(len(load_data(d)))
+        return sizes
 
 def show_qb_streamlines(tracks,qb):
 	# Create gui and message passing (events)
@@ -65,12 +72,22 @@ def get_random_streamlines(tracks,N):
 	return random_streamlines
 		
 def count_close_tracks(sla, slb, dist_thr=20):
-        cnt_a_close = zeros(len(slb))
+        cnt_a_close = np.zeros(len(slb))
         for ta in sla:
             dta = bundles_distances_mdf([ta],slb)[0]
 #            dta = bundles_distances_mam([ta],slb)[0]
             cnt_a_close += binarise(dta, dist_thr)
         return cnt_a_close
+
+tractography_sizes = [175544, 161218, 155763, 141877, 149272, 226456, 168833, 186543, 191087, 153432]
+
+def split_halves(id):
+        tracks = load_data(id)
+        N = tractography_sizes[id]
+        M = N/2
+	first_half = np.random.permutation(np.arange(len(tracks)))[:M]
+        second_half= np.random.permutation(np.arange(len(tracks)))[M:N]
+        return [tracks[n] for n in first_half], [tracks[n] for n in second_half]
 
 '''
 coverage = # neighb tracks / #tracks 
@@ -95,10 +112,22 @@ def binarise(D, thr):
 #Replaces elements of D which are <thr with 1 and the rest with 0
         return 1*(np.array(D)<thr)
 
+'''
+print get_tractography_sizes()
+'''
+
+tractography_sizes = [175544, 161218, 155763, 141877, 149272, 226456, 168833, 186543, 191087, 153432]
+
+# size 02 175544
+
+
 id=0
 
-tracks=load_data(id)
+first, second = split_halves(id)
 
+print len(first), len(second)
+
+'''
 track_subset_size = 50000
 
 tracks=tracks[:track_subset_size]
@@ -107,15 +136,21 @@ print 'Streamlines loaded'
 #print 'QuickBundles finished'
 #print 'visualize/interact with streamlines'
 #window,region,axes,labeler = show_qb_streamlines(tracks,qb)
+'''
 
-qb = QuickBundles(tracks,20,18)
-N=qb.total_clusters()
-print 'QB finished with', N, 'clusters'
+downsampling = 12
 
+first_qb = QuickBundles(first,20,downsampling)
+n_clus = first_qb.total_clusters()
+print 'QB for first half has', n_clus, 'clusters'
+second_down = [downsample(s, downsampling) for s in second]
+
+'''
 random_streamlines={}
 for rep in [0]:
 	random_streamlines[rep] = get_random_streamlines(qb.downsampled_tracks(), N)
-	
+'''
+
 # Thresholded distance matrices (subset x tracks) where subset Q = QB centroids
 # and subset R = matched random subset. Matrices have 1 if the compared
 # tracks have MDF distance < threshold a,d 0 otherwise.
@@ -125,13 +160,17 @@ for rep in [0]:
 # The number of subset tracks 'close' to each track
 #neighbours_Q = np.sum(DQ, axis=0)
 #neighbours_R = np.sum(DR, axis=0)
-neighbours_Q = count_close_tracks(qb.virtuals(), qb.downsampled_tracks(), 20)
-neighbours_R = count_close_tracks(random_streamlines[0], qb.downsampled_tracks(), 20)
 
-maxclose = np.int(np.max(np.hstack((neighbours_Q,neighbours_R))))
+#neighbours_Q = count_close_tracks(qb.virtuals(), qb.downsampled_tracks(), 20)
+#neighbours_R = count_close_tracks(random_streamlines[0], qb.downsampled_tracks(), 20)
+
+neighbours_first = count_close_tracks(first_qb.virtuals(), first_qb.downsampled_tracks(), 20)
+neighbours_second = count_close_tracks(first_qb.virtuals(), second_down, 20)
+
+maxclose = np.int(np.max(np.hstack((neighbours_first,neighbours_second))))
 
 # The numbers of tracks 0, 1, 2, ... 'close' subset tracks
-counts = [(np.int(n), len(find(neighbours_Q==n)), len(find(neighbours_R==n)))
+counts = [(np.int(n), len(find(neighbours_first==n)), len(find(neighbours_second==n)))
           for n in range(maxclose+1)]
 
 print np.array(counts)
@@ -154,7 +193,7 @@ print np.array(counts)
 # I suppose you could say this revealed some kind of sparseness for the
 # QB subset by comparison with the Random one
 
-"""
+'''
 counts, Qfreq, Rfreq 
 191 clusters
 
