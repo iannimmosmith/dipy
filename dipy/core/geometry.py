@@ -788,6 +788,7 @@ def circumradius(a, b, c):
     -------
     circumradius : float
         the desired circumradius
+
     '''
     x = a-c
     xx = np.linalg.norm(x)**2
