@@ -42,7 +42,6 @@ def random_uniform_on_sphere(n=1,coords='xyz'):
         if coords=='degrees':
             return (180./np.pi)*angles
 
-
 def eigenstats(points, alpha=0.05):
     r'''Principal direction and confidence ellipse
 
@@ -273,6 +272,72 @@ def angular_similarity(S,T):
     v = [np.sum([np.abs(np.dot(p[i],T[i])) for i in range(n)]) for p in permutations(S,n)]
     
     return np.float(np.max(v))#*np.float(n)/np.float(m)
+
+def evaluate_sphere_eqzone(vertices, north=np.array([0,0,1]), width=5):
+    '''
+    evaluate a spherical triangulation by looking at the variability of 
+    numbers of vertices in 'vertices' in equatorial zones of width 
+    'width' orthogonal to each point in 'vertices'
+
+    Parameters
+    ----------
+    vertices : array (N, 3),
+            vertices of the sphere
+    north : array (3, )
+            an initial point
+    widht : float,
+            width of the size of the equatorial zone
+
+    Returns
+    -------
+    equatorial_counts : int
+    polar_counts : int
+    ''' 
+
+    equatorial_counts = np.array([len(equatorial_zone_vertices(vertices, pole, width=width)) for pole in vertices if np.dot(pole,north) >= 0])
+    polar_counts = np.array([len(polar_zone_vertices(vertices, pole, width=width)) for pole in vertices if np.dot(pole,north) >= 0])
+    return equatorial_counts, polar_counts
+
+
+def evaluate_sphere_coarseness(vertices, faces):
+    """
+    looks at the maximum distance a point on the sphere can be
+    from a vertex of the mesh
+
+    Parameters
+    ----------
+
+    vertices : array (N, 3)
+    faces : array (M, 3)
+    
+    Returns
+    -------
+    coarse : float
+    
+    """
+    faces = np.asarray(faces)
+    coarse = []
+    for face in faces:
+        f1, f2, f3 = face
+        a, b, c = vertices[f1], vertices[f2], vertices[f3]
+        #print a, b, c
+        coarse.append(geometry.circumradius(a, b, c))
+    return np.max(coarse)
+
+def equatorial_zone_vertices(vertices, pole, width=5):
+    """
+    finds the 'vertices' in the equatorial zone conjugate
+    to 'pole' with width half 'width' degrees
+    """
+    return [i for i,v in enumerate(vertices) if np.abs(np.dot(v,pole)) < np.abs(np.sin(np.pi*width/180))]
+
+def polar_zone_vertices(vertices, pole, width=5):
+    """
+    finds the 'vertices' in the equatorial band around
+    the 'pole' of radius 'width' degrees
+    """
+    return [i for i,v in enumerate(vertices) if np.abs(np.dot(v,pole)) > np.abs(np.cos(np.pi*width/180))]
+
 
 
 
